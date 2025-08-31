@@ -6,70 +6,35 @@ services:
     image: "redis:alpine"
     restart: always
     command: redis-server --appendonly yes --replica-read-only no
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "6379:6379"
-    env_file:
-      - ./.env
     volumes:
       - ".data/redis:/data"
 
-  # database containers, one for each db
-  pg_fixPermissions:
-    image: "bitnami/postgresql:14"
-    user: root
-    command: chown -R 1001:1001 /bitnami/postgresql
-    volumes:
-      - ".data/pg:/bitnami/postgresql/data"
-
   postgres:
-    image: "bitnami/postgresql:14"
+    image: "postgres:14"
     restart: always
     container_name: "pg"
-    env_file:
-      - ./.env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: izing
     volumes:
-      - ".data/pg:/bitnami/postgresql/data"
+      - ".data/pg:/var/lib/postgresql/data"
     ports:
       - "5432:5432"
-    depends_on:
-      - pg_fixPermissions
 
   rabbitmq:
     image: rabbitmq:3-management
     hostname: rabbitmq
     container_name: "rabbitmq"
     restart: always
-    env_file:
-      - ./.env
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: 123456
     volumes:
       - .data/rabbitmq/data/:/var/lib/rabbitmq/
       - .data/rabbitmq/logs/:/var/log/rabbitmq/log
     ports:
       - 5672:5672
       - 15672:15672
-
-  api:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    restart: always
-    container_name: "api"
-    env_file:
-      - ./.env
-    stdin_open: true
-    tty: true
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      - redis
-      - postgres
-      - rabbitmq
-    ports:
-      - "3100:3100"
-    volumes:
-      - .data/.wwebjs_auth:/app/.wwebjs_auth
-      - .data/medias:/app/public
