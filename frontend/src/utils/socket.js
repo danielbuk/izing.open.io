@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client'
 
 export const socketIO = () => {
-  return io(process.env.VUE_URL_API, {
+  return io('http://localhost:8080', {
     reconnection: true,
     autoConnect: true,
     transports: ['websocket'],
